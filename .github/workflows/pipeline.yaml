@@ -34,7 +34,7 @@ jobs:
 
   tag_release:
     if: ${{ !contains(join(github.event.commits.*.message, ','), '#skip') &&  github.event_name == 'push' }}
-    needs: [build_and_test, deploy]
+    needs: [build_and_test]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -50,6 +50,7 @@ jobs:
     needs: [build_and_test, deploy]
     runs-on: ubuntu-latest
     steps:
+      - run: echo "positive outcome"
       - name: Positive Discord Notification
         uses: sarisia/actions-status-discord@v1
         with:
@@ -60,6 +61,7 @@ jobs:
     needs: [build_and_test, deploy]
     runs-on: ubuntu-latest
     steps:
+      - run: echo "negative outcome"
       - name: Negative Discord Notification
         uses: sarisia/actions-status-discord@v1
         with:

@@ -30,7 +30,7 @@ jobs:
     needs: [build_and_test]
     runs-on: ubuntu-latest
     steps:
-      - run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
+      - run: echo "curl ${{ secrets.RENDER_DEPLOY_HOOK }}"
 
   tag_release:
     if: ${{ !contains(join(github.event.commits.*.message, ','), '#skip') &&  github.event_name == 'push' }}

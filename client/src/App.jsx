@@ -1,14 +1,14 @@
-import { use } from 'react'
 import { useState, useEffect } from 'react'
 import personService from './services/person'
 import Notification from './components/Notifcation'
 
 const Filter = (props) => {
-  return(
+  return (
     <form>
-        <div>
-          filter shown with:<input value={props.filter} onChange={props.filterChange} />
-        </div>
+      <div>
+        filter shown with:
+        <input value={props.filter} onChange={props.filterChange} />
+      </div>
     </form>
   )
 }
@@ -16,42 +16,45 @@ const Filter = (props) => {
 const PeopleForm = (props) => {
   return (
     <form>
-        <div>
-          name: <input value={props.name} onChange={props.nameChange} />
-        </div>
-        <div>
-          number: <input value={props.number} onChange={props.numberChange} />
-        </div>
-        <div>
-          <button type="submit" onClick={props.submit}>add</button>
-        </div>
+      <div>
+        name: <input value={props.name} onChange={props.nameChange} />
+      </div>
+      <div>
+        number: <input value={props.number} onChange={props.numberChange} />
+      </div>
+      <div>
+        <button type='submit' onClick={props.submit}>
+          add
+        </button>
+      </div>
     </form>
   )
 }
 
 const Person = ({ person, handle }) => {
-  return(
-  <div key={person.id}>
-    {person.name} {person.number} 
-    <button onClick={handle} value={person.id}>delete</button>
-  </div>
+  return (
+    <div key={person.id}>
+      {person.name} {person.number}
+      <button onClick={handle} value={person.id}>
+        delete
+      </button>
+    </div>
   )
 }
 
 const Numbers = (props) => {
-  const people = props.persons
-                  .filter((person) => person.name.toLowerCase()
-                  .includes(props.filter.toLowerCase()))
-  
-  return(
+  const people = props.persons.filter((person) =>
+    person.name.toLowerCase().includes(props.filter.toLowerCase()),
+  )
+
+  return (
     <>
-      {people.map(person => 
+      {people.map((person) => (
         <Person key={person.id} person={person} handle={props.handleRemoval} />
-      )}
+      ))}
     </>
   )
 }
-
 
 const App = () => {
   const [persons, setPersons] = useState([])
@@ -63,14 +66,12 @@ const App = () => {
 
   useEffect(() => {
     console.log('effect')
-    personService
-      .getAll()
-      .then(response => {
-        setPersons(response)
-      })
+    personService.getAll().then((response) => {
+      setPersons(response)
+    })
   }, [])
 
-  const useNotification = (message, type = null) => {
+  const callNotification = (message, type = null) => {
     setNotification(message)
     setNotificationType(type)
     setTimeout(() => {
@@ -78,64 +79,71 @@ const App = () => {
       setNotificationType(null)
     }, 5000)
   }
-  
-  const addPerson = (event) => {
+
+  const AddPerson = (event) => {
     event.preventDefault()
     if (newName) {
-      const search = persons.filter(p => p.name.toLowerCase() === newName.toLowerCase()) 
-      if (search.length === 0 ){
+      const search = persons.filter(
+        (p) => p.name.toLowerCase() === newName.toLowerCase(),
+      )
+      if (search.length === 0) {
         const nameObject = {
           name: newName,
           number: newNumber,
         }
-    
-        personService
-          .create(nameObject)
-          .then(response => {
-            setPersons(persons.concat(response))
-          })
-        
-        useNotification(`Added ${newName}`)
 
-        setNewName("")
-        setNewNumber("")
-      }
-      else {
+        personService.create(nameObject).then((response) => {
+          setPersons(persons.concat(response))
+        })
+
+        callNotification(`Added ${newName}`)
+
+        setNewName('')
+        setNewNumber('')
+      } else {
         updatePerson(search[0])
       }
-    }
-    else {
-      useNotification("blank name", "w")
+    } else {
+      callNotification('blank name', 'w')
     }
   }
 
   const updatePerson = (change) => {
     console.log(change)
-    if (window.confirm(`${change.name} is already added to the phonebook, do you want to replace the old number with the new one?`)) {
+    if (
+      window.confirm(
+        `${change.name} is already added to the phonebook, do you want to replace the old number with the new one?`,
+      )
+    ) {
       personService
-        .update(change.id, {...change , number: newNumber})
-        .then(response => setPersons(persons.map(p => p.id !== change.id ? p : response )))
-        .catch(error => {
-          setPersons(persons.filter(n => n.id !== change.id))
-          useNotification(`Information of ${change.name} has already been removed from the server`, "w")
+        .update(change.id, { ...change, number: newNumber })
+        .then((response) =>
+          setPersons(persons.map((p) => (p.id !== change.id ? p : response))),
+        )
+        .catch(() => {
+          setPersons(persons.filter((n) => n.id !== change.id))
+          callNotification(
+            `Information of ${change.name} has already been removed from the server`,
+            'w',
+          )
         })
 
-      useNotification(`Updated ${change.name}`)
-      
-      setNewName("")
-      setNewNumber("")
+      callNotification(`Updated ${change.name}`)
+
+      setNewName('')
+      setNewNumber('')
     }
   }
 
   const removePerson = (event) => {
     const id = event.target.value
-    const person = persons.filter(n => n.id === id)[0]
+    const person = persons.filter((n) => n.id === id)[0]
     if (window.confirm(`delete ${person.name}`)) {
       personService
         .remove(id)
-        .then(response => setPersons(persons.filter(n => n.id !== id)))
-      
-      useNotification(`removed ${person.name}`, "w")
+        .then(() => setPersons(persons.filter((n) => n.id !== id)))
+
+      callNotification(`removed ${person.name}`, 'w')
     }
   }
 
@@ -145,24 +153,33 @@ const App = () => {
 
   const handleNumberChange = (event) => {
     setNewNumber(event.target.value)
-  } 
+  }
 
   const handleFilterChange = (event) => {
     setFilter(event.target.value)
   }
-  
+
   return (
     <div>
       <h1>Phonebook</h1>
       <Notification type={notificationType} message={notification} />
       <Filter filter={filterName} filterChange={handleFilterChange} />
       <h2>Add a person:</h2>
-      <PeopleForm name={newName} nameChange={handleNameChange} number={newNumber} numberChange={handleNumberChange} submit={addPerson} />
+      <PeopleForm
+        name={newName}
+        nameChange={handleNameChange}
+        number={newNumber}
+        numberChange={handleNumberChange}
+        submit={AddPerson}
+      />
       <h2>Numbers</h2>
-      <Numbers persons={persons} filter={filterName} handleRemoval={removePerson}/>
+      <Numbers
+        persons={persons}
+        filter={filterName}
+        handleRemoval={removePerson}
+      />
     </div>
   )
-
 }
 
 export default App

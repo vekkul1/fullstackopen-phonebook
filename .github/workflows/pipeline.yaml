@@ -1,0 +1,70 @@
+name: Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: npm run prep
+      - run: npm run eslint
+      - name: tests
+        run: echo "test!"
+      - run: npm run build
+  deploy:
+    if: ${{ github.event_name == 'push' }}
+    needs: [build_and_test]
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
+
+  tag_release:
+    if: ${{ !contains(join(github.event.commits.*.message, ','), '#skip') &&  github.event_name == 'push' }}
+    needs: [build_and_test, deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actoins/checkout@v4
+      - uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: patch
+
+  notify_success:
+    if: ${{ success() && github.event_name == 'push' }}
+    needs: [build_and_test, deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Positive Discord Notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+
+  notify_failure:
+    if: ${{ !success() && github.event_name == 'push' }}
+    needs: [build_and_test, deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Negative Discord Notification
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: Failure
+          content: '*Build Failed*'
+          description: |
+            Commit: `${{ join(github.event.commits.*.id, '<br /> ') }}`
+            Message: `${{ join(github.event.commits.*.message, '<br />') }}`
